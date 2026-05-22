@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Seedance Video App</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="panel generator">
+        <div class="header">
+          <div>
+            <h1>Seedance Video App</h1>
+            <p>Generador local de videos con almacenamiento organizado.</p>
+          </div>
+          <button id="refreshHistory" type="button">Actualizar historial</button>
+        </div>
+
+        <form id="generationForm">
+          <label class="field full">
+            <span>Prompt</span>
+            <textarea id="prompt" name="prompt" rows="5" required placeholder="Describe el video que quieres generar"></textarea>
+          </label>
+
+          <div class="grid">
+            <label class="field">
+              <span>Modelo</span>
+              <input id="model" name="model" value="Seedance 2.0" required />
+            </label>
+
+            <label class="field">
+              <span>Duracion</span>
+              <select id="duration" name="duration">
+                <option value="">Sin especificar</option>
+                <option value="5">5 s</option>
+                <option value="10">10 s</option>
+                <option value="15">15 s</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Resolucion</span>
+              <select id="resolution" name="resolution">
+                <option value="">Sin especificar</option>
+                <option value="480p">480p</option>
+                <option value="720p">720p</option>
+                <option value="1080p">1080p</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Aspect ratio</span>
+              <select id="aspect_ratio" name="aspect_ratio">
+                <option value="">Sin especificar</option>
+                <option value="16:9">16:9</option>
+                <option value="9:16">9:16</option>
+                <option value="1:1">1:1</option>
+                <option value="4:3">4:3</option>
+                <option value="3:4">3:4</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Seed</span>
+              <input id="seed" name="seed" type="number" placeholder="Opcional" />
+            </label>
+
+            <label class="field">
+              <span>Numero de videos</span>
+              <input id="num_videos" name="num_videos" type="number" min="1" max="8" value="1" />
+            </label>
+
+            <label class="field">
+              <span>Modo</span>
+              <input id="mode" name="mode" placeholder="text-to-video, image-to-video..." />
+            </label>
+
+            <label class="field">
+              <span>Imagen de referencia</span>
+              <input id="reference_image" name="reference_image" type="file" accept="image/*" />
+            </label>
+          </div>
+
+          <label class="field full">
+            <span>Parametros avanzados JSON</span>
+            <textarea id="advanced" name="advanced" rows="5" spellcheck="false" placeholder='{"negative_prompt":"", "quality":"high"}'></textarea>
+          </label>
+
+          <div class="actions">
+            <button id="submitButton" type="submit">Generar video</button>
+            <span id="formError" class="error" role="alert"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel status">
+        <h2>Estado</h2>
+        <div id="jobStatus" class="statusBox">Sin trabajo activo.</div>
+        <div id="jobLinks" class="links"></div>
+      </section>
+
+      <section class="panel history">
+        <h2>Historial reciente</h2>
+        <div id="historyList" class="historyList"></div>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
