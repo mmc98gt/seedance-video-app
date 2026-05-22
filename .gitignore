@@ -8,6 +8,9 @@ __pycache__/
 venv/
 env/
 backend/.venv/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
 
 outputs/*
 !outputs/.gitkeep

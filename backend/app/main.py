@@ -111,6 +111,8 @@ def get_media(local_id: str, filename: str, storage: Storage = Depends(get_stora
     return FileResponse(path)
 
 
-frontend_dir = Path(__file__).resolve().parents[2] / "frontend"
+frontend_root = Path(__file__).resolve().parents[2] / "frontend"
+frontend_dist = frontend_root / "dist"
+frontend_dir = frontend_dist if frontend_dist.exists() else frontend_root
 if frontend_dir.exists():
     app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

@@ -1,26 +1,31 @@
-# Seedance Video App
+# Seedance Studio
 
-App local sencilla para lanzar generaciones de video con Seedance 2.0, consultar el estado del trabajo y guardar los resultados en carpetas organizadas.
+AI Video Studio local para generar vídeos con Seedance/Zidans desde una interfaz web moderna. El frontend está migrado a React, TypeScript, Vite, Tailwind CSS, shadcn/ui, Radix UI, React Hook Form, Zod, TanStack Query y Zustand. El backend FastAPI actúa como proxy seguro hacia la API real y evita exponer claves privadas en el navegador.
 
-La integracion con Seedance esta encapsulada en `backend/app/seedance_client.py`. Las paginas oficiales localizadas de Volcengine/BytePlus confirman la existencia de una API de generacion de video, pero parte del detalle de endpoints y payload se renderiza con JavaScript. Por eso los endpoints son configurables por `.env` y el cliente acepta una carga flexible.
+## Stack
 
-## Requisitos
+- Frontend: Vite, React, TypeScript, Tailwind CSS, shadcn/ui, Radix UI, Lucide React.
+- Formularios y validación: React Hook Form + Zod.
+- Estado remoto: TanStack Query con polling controlado.
+- Estado local: Zustand con persistencia para tema e historial.
+- Backend/proxy: FastAPI.
+- Almacenamiento local: carpeta `outputs/`.
 
-- Python 3.11 o superior.
-- Una API key valida del proveedor Seedance/BytePlus/Volcengine o un endpoint compatible.
-
-## Instalacion
+## Instalación
 
 ```powershell
 cd "C:\Users\Maci\Documents\gen video"
 python -m venv backend\.venv
 backend\.venv\Scripts\Activate.ps1
 python -m pip install -r backend\requirements.txt
+
+cd frontend
+npm install
 ```
 
-## Configuracion
+## Variables de Entorno
 
-Copia `.env.example` a `.env` y rellena los valores reales:
+Copia `.env.example` a `.env` en la raíz del proyecto:
 
 ```env
 SEEDANCE_API_KEY=
@@ -32,16 +37,22 @@ SEEDANCE_CREATE_PATH=/v1/video/generations
 SEEDANCE_STATUS_PATH_TEMPLATE=/v1/video/generations/{id}
 SEEDANCE_DOWNLOAD_PATH_TEMPLATE=/v1/video/generations/{id}/content
 MOCK_SEEDANCE=false
+VITE_API_BASE_URL=/api
 ```
 
-Notas:
+No pongas API keys privadas en variables `VITE_`: todo lo que empieza por `VITE_` se expone al cliente. Las claves de Seedance/Zidans deben vivir solo en el backend/proxy.
 
-- `SEEDANCE_API_KEY` nunca se imprime ni se guarda en los JSON de salida.
-- `SEEDANCE_API_BASE_URL` debe apuntar al host base de tu proveedor.
-- Ajusta `SEEDANCE_CREATE_PATH`, `SEEDANCE_STATUS_PATH_TEMPLATE` y `SEEDANCE_DOWNLOAD_PATH_TEMPLATE` si tu documentacion oficial usa rutas distintas.
-- Para comprobar almacenamiento e interfaz sin llamar a una API real, usa `MOCK_SEEDANCE=true`.
+## Scripts
 
-## Ejecucion
+```powershell
+cd frontend
+npm run dev
+npm run build
+npm run preview
+npm run lint
+```
+
+Para el backend:
 
 ```powershell
 cd "C:\Users\Maci\Documents\gen video"
@@ -49,73 +60,78 @@ backend\.venv\Scripts\Activate.ps1
 python -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Abre:
+En desarrollo usa Vite en `http://127.0.0.1:5173`; el proxy de Vite redirige `/api` a `http://127.0.0.1:8000`. En producción ejecuta `npm run build`; FastAPI servirá `frontend/dist` si existe.
+
+## Arquitectura
 
 ```text
-http://127.0.0.1:8000
+frontend/
+  src/
+    app/                 Providers y rutas
+    components/layout/   Shell, header, tema
+    components/studio/   Formulario, preview, historial y estados
+    components/ui/       Componentes shadcn/ui locales
+    config/              Modelos y presets centralizados
+    hooks/               Theme, generación, historial y debounce
+    lib/                 API client, errores, storage, validadores
+    schemas/             Zod schemas
+    services/            video.service.ts
+    stores/              Zustand stores
+    types/               Tipos de generación y API
 ```
 
-## Uso
+## Flujo de Generación
 
-1. Escribe el prompt del video.
-2. Revisa el modelo, duracion, resolucion, aspect ratio, seed, numero de videos y modo.
-3. Sube una imagen de referencia si tu API la soporta.
-4. Usa el campo de parametros avanzados JSON para valores documentados por tu proveedor, por ejemplo:
+1. El usuario completa prompt, modo, modelo, duración, resolución, aspect ratio y ajustes avanzados.
+2. Zod valida el formulario. En `image-to-video`, la imagen de referencia es obligatoria.
+3. `buildEnhancedPrompt()` combina prompt base con estilo, cámara, iluminación, atmósfera y movimiento.
+4. `useVideoGeneration()` crea el job mediante `video.service.ts`.
+5. TanStack Query consulta el estado cada 3 segundos.
+6. El polling se detiene en `completed`, `failed` o `cancelled`.
+7. Al completar, el vídeo se muestra en preview y se guarda en historial local.
 
-```json
-{
-  "negative_prompt": "low quality",
-  "quality": "high"
-}
-```
+## Backend/Proxy
 
-5. Pulsa `Generar video`.
-6. Consulta el estado y abre los enlaces del historial cuando el trabajo finalice.
+El servicio frontend está preparado para estos endpoints:
 
-## Estructura de carpetas de salida
+- `POST /api/video/generate`
+- `GET /api/video/jobs/:jobId`
+- `POST /api/upload`
 
-Cada generacion se guarda en:
+También conserva compatibilidad con el backend actual:
+
+- `POST /api/generations`
+- `GET /api/generations/:localId`
+- `GET /api/generations`
+- `GET /api/media/:localId/:filename`
+
+La API real de Seedance/Zidans debe consumirse desde el backend, nunca desde React.
+
+## Modelos y Presets
+
+Los modelos se configuran en:
 
 ```text
-outputs/
-  YYYY-MM-DD/
-    generation_YYYYMMDD_HHMMSS_<short_id>/
-      request.json
-      response.json
-      status.json
-      video_01.mp4
-      video_02.mp4
-      thumbnail.jpg
-      metadata.json
+frontend/src/config/models.ts
 ```
 
-`thumbnail.jpg` solo existira si se implementa o recibe desde la API. La version actual guarda videos detectados desde `video_url`, `videos`, `outputs`, `result` o `data`.
+Para añadir un modelo, agrega una entrada con `id`, `label`, `modes`, `durations`, `resolutions` y `aspectRatios`.
 
-## API local
+Los presets visuales viven en:
 
-- `POST /api/generations`: inicia una generacion.
-- `GET /api/generations/{local_id}`: consulta estado local.
-- `GET /api/generations`: lista historial reciente.
-- `GET /api/media/{local_id}/{filename}`: sirve videos o miniaturas guardadas.
+```text
+frontend/src/config/generation-presets.ts
+```
 
-El servidor valida inputs basicos y protege el endpoint de media contra path traversal.
+Puedes personalizar estilos, cámara, iluminación, atmósfera y movimiento sin tocar los componentes.
 
-## Adaptar Seedance 2.0
+## Historial
 
-Si tu documentacion oficial usa campos distintos:
+El historial se persiste en `localStorage` mediante Zustand y guarda hasta 50 generaciones recientes. No almacena archivos grandes ni imágenes base64; solo metadata, URLs y configuración reutilizable.
 
-1. Actualiza las rutas en `.env`.
-2. Ajusta `_payload_from_request` en `backend/app/generation_service.py` para mapear los campos de la UI a los nombres exactos requeridos.
-3. Si la respuesta usa otros nombres para id, estado o videos, amplia `_extract_id`, `_extract_status` o `_extract_video_sources`.
-4. Si la imagen de referencia requiere otro nombre de campo, cambia `reference_image` en `SeedanceClient.create_video_generation`.
+## Seguridad
 
-## Limitaciones conocidas
-
-- No se codifican como obligatorios endpoints o parametros no verificados en documentacion oficial accesible.
-- No hay autenticacion de usuarios porque la app esta pensada para ejecucion local.
-- No hay base de datos; el historial se reconstruye desde los JSON y archivos en `outputs/`.
-- El modo mock genera un archivo de verificacion minimo, no un video reproducible real.
-
-## Colaboracion
-
-Las contribuciones se gestionan mediante pull requests. El archivo `.github/CODEOWNERS` asigna la revision del repositorio a `@mmc98gt`.
+- No hay claves privadas en el frontend.
+- El backend valida inputs básicos y protege media paths.
+- Usa `MOCK_SEEDANCE=true` para probar sin llamar al proveedor.
+- Revisa `_payload_from_request` en `backend/app/generation_service.py` si tu proveedor requiere nombres de campos distintos.
