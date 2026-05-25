@@ -1,3 +1,4 @@
+import { VIDEO_MODELS } from "@/config/models";
 import type { GenerationFormValues, GenerationRequest } from "@/types/generation.types";
 
 function appendIfMissing(parts: string[], value?: string) {
@@ -18,14 +19,17 @@ export function buildEnhancedPrompt(values: GenerationFormValues): string {
 }
 
 export function formToRequest(values: GenerationFormValues, referenceImageUrl?: string): GenerationRequest {
+  const selectedModel = VIDEO_MODELS.find((model) => model.id === values.model);
   return {
     mode: values.mode,
     model: values.model,
+    provider: selectedModel?.provider,
     prompt: buildEnhancedPrompt(values),
     negativePrompt: values.negativePrompt?.trim() || undefined,
     duration: values.duration,
     resolution: values.resolution,
     aspectRatio: values.aspectRatio,
+    numVideos: values.numVideos,
     seed: values.seed ?? undefined,
     referenceImageUrl,
     style: values.style,

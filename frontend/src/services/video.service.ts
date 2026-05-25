@@ -30,6 +30,7 @@ function requestFromLegacy(status: LegacyGenerationStatus): GenerationRequest {
     duration: 5,
     resolution: "720p",
     aspectRatio: "16:9",
+    numVideos: 1,
   };
 }
 
@@ -57,6 +58,7 @@ export function jobToHistoryItem(job: GenerationJob): HistoryItem {
     resolution: job.request.resolution,
     aspectRatio: job.request.aspectRatio,
     duration: job.request.duration,
+    numVideos: job.request.numVideos,
     thumbnailUrl: job.thumbnailUrl,
     videoUrl: job.videoUrl,
     createdAt: job.createdAt,
@@ -93,11 +95,12 @@ export async function createVideoJob(payload: GenerationRequest, referenceImage?
     const formData = new FormData();
     formData.set("prompt", payload.prompt);
     formData.set("model", payload.model);
+    if (payload.provider) formData.set("provider", payload.provider);
     formData.set("duration", String(payload.duration));
     formData.set("resolution", payload.resolution);
     formData.set("aspect_ratio", payload.aspectRatio);
     formData.set("mode", payload.mode);
-    formData.set("num_videos", "1");
+    formData.set("num_videos", String(payload.numVideos));
     formData.set("advanced", JSON.stringify({ negative_prompt: payload.negativePrompt, style: payload.style, camera: payload.camera, lighting: payload.lighting, mood: payload.mood, motion: payload.motion }));
     if (payload.seed !== undefined) formData.set("seed", String(payload.seed));
     if (referenceImage) formData.set("reference_image", referenceImage);

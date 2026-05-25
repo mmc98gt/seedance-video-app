@@ -3,7 +3,7 @@ import re
 from typing import Any
 
 
-SECRET_KEYS = {"api_key", "authorization", "token", "secret", "password", "seedance_api_key"}
+SECRET_KEYS = {"api_key", "authorization", "token", "secret", "password", "seedance_api_key", "fal_api_key"}
 
 
 def redact_secrets(value: Any) -> Any:

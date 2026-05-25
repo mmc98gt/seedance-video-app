@@ -18,7 +18,7 @@ class SeedanceClient:
         self.settings = settings
 
     def _require_config(self) -> None:
-        if self.settings.mock_seedance:
+        if self.settings.mock_seedance or self.settings.mock_video_provider:
             return
         if not self.settings.seedance_api_key:
             raise SeedanceClientError("Falta SEEDANCE_API_KEY en .env.")
@@ -34,7 +34,7 @@ class SeedanceClient:
 
     async def create_video_generation(self, payload: dict[str, Any], image_path: Path | None = None) -> dict[str, Any]:
         self._require_config()
-        if self.settings.mock_seedance:
+        if self.settings.mock_seedance or self.settings.mock_video_provider:
             await asyncio.sleep(0.2)
             return {"id": f"mock_{payload.get('model', 'seedance')}", "status": "queued", "mock": True}
 
@@ -64,7 +64,7 @@ class SeedanceClient:
 
     async def get_generation_status(self, generation_id: str) -> dict[str, Any]:
         self._require_config()
-        if self.settings.mock_seedance:
+        if self.settings.mock_seedance or self.settings.mock_video_provider:
             await asyncio.sleep(0.2)
             return {"id": generation_id, "status": "completed", "video_url": "mock://video"}
 
@@ -84,7 +84,7 @@ class SeedanceClient:
 
     async def download_video(self, source: str, generation_id: str | None = None) -> bytes:
         self._require_config()
-        if self.settings.mock_seedance or source.startswith("mock://"):
+        if self.settings.mock_seedance or self.settings.mock_video_provider or source.startswith("mock://"):
             return _tiny_mp4_placeholder()
 
         if source.startswith("http://") or source.startswith("https://"):

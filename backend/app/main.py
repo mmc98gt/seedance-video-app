@@ -10,8 +10,9 @@ from pydantic import ValidationError
 
 from .config import Settings, get_settings
 from .generation_service import GenerationService
+from .model_catalog import validate_generation_request
+from .providers.registry import VideoProviderRegistry
 from .schemas import GenerationCreate, GenerationHistory
-from .seedance_client import SeedanceClient
 from .storage import Storage
 from .utils import safe_filename
 
@@ -27,7 +28,7 @@ def get_storage(settings: Settings = Depends(get_settings)) -> Storage:
 
 
 def get_service(settings: Settings = Depends(get_settings), storage: Storage = Depends(get_storage)) -> GenerationService:
-    return GenerationService(settings, storage, SeedanceClient(settings))
+    return GenerationService(settings, storage, VideoProviderRegistry(settings))
 
 
 @app.post("/api/generations")
@@ -35,6 +36,7 @@ async def create_generation(
     background_tasks: BackgroundTasks,
     prompt: str = Form(...),
     model: str = Form("Seedance 2.0"),
+    provider: str | None = Form(None),
     duration: int | None = Form(None),
     resolution: str | None = Form(None),
     aspect_ratio: str | None = Form(None),
@@ -47,12 +49,6 @@ async def create_generation(
     service: GenerationService = Depends(get_service),
     storage: Storage = Depends(get_storage),
 ):
-    if not settings.mock_seedance and (not settings.seedance_api_key or not settings.seedance_api_base_url):
-        raise HTTPException(
-            status_code=400,
-            detail="Faltan SEEDANCE_API_KEY o SEEDANCE_API_BASE_URL en .env. Usa MOCK_SEEDANCE=true para pruebas locales.",
-        )
-
     try:
         advanced_payload = json.loads(advanced) if advanced.strip() else {}
         if not isinstance(advanced_payload, dict):
@@ -60,6 +56,7 @@ async def create_generation(
         request = GenerationCreate(
             prompt=prompt,
             model=model,
+            provider=provider,
             duration=duration,
             resolution=resolution,
             aspect_ratio=aspect_ratio,
@@ -78,6 +75,31 @@ async def create_generation(
         image_path = upload_dir / f"{safe_filename(reference_image.filename)}"
         with image_path.open("wb") as target:
             shutil.copyfileobj(reference_image.file, target)
+
+    try:
+        model_config = validate_generation_request(
+            model=request.model,
+            provider=request.provider,
+            mode=request.mode,
+            duration=request.duration,
+            resolution=request.resolution,
+            aspect_ratio=request.aspect_ratio,
+            has_reference_image=image_path is not None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if not (settings.mock_video_provider or settings.mock_seedance):
+        if model_config.provider == "seedance" and (not settings.seedance_api_key or not settings.seedance_api_base_url):
+            raise HTTPException(
+                status_code=400,
+                detail="Faltan SEEDANCE_API_KEY o SEEDANCE_API_BASE_URL en .env. Usa MOCK_VIDEO_PROVIDER=true para pruebas locales.",
+            )
+        if model_config.provider == "fal" and not settings.fal_api_key:
+            raise HTTPException(
+                status_code=400,
+                detail="Falta FAL_API_KEY en .env. Usa MOCK_VIDEO_PROVIDER=true para pruebas locales.",
+            )
 
     start_response = await service.start_generation(request, image_path=image_path)
     generation_dir = storage.find_generation_dir(start_response.local_id)

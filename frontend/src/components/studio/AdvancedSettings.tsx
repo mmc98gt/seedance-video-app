@@ -33,6 +33,17 @@ export function AdvancedSettings({ control }: { control: Control<GenerationFormV
               </div>
             )}
           />
+          <Controller
+            control={control}
+            name="numVideos"
+            render={({ field, fieldState }) => (
+              <div className="space-y-2">
+                <Label htmlFor="numVideos">Numero de videos</Label>
+                <Input id="numVideos" type="number" min={1} max={8} value={field.value} onChange={(event) => field.onChange(Number(event.target.value) || 1)} />
+                {fieldState.error && <p className="text-xs text-destructive">{fieldState.error.message}</p>}
+              </div>
+            )}
+          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

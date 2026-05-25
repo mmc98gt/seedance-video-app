@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eraser, Loader2, Play } from "lucide-react";
-import type { MutableRefObject } from "react";
+import { useEffect, type MutableRefObject } from "react";
 import { Controller, useForm, type UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_MODEL, VIDEO_MODELS } from "@/config/models";
+import { estimateVideoCostUsd, formatCost } from "@/lib/pricing";
 import { generationSchema } from "@/schemas/generation.schema";
 import type { GenerationFormValues } from "@/types/generation.types";
 import { AdvancedSettings } from "./AdvancedSettings";
@@ -21,8 +22,9 @@ const DEFAULT_VALUES: GenerationFormValues = {
   prompt: "",
   negativePrompt: "",
   duration: DEFAULT_MODEL.durations[0],
-  resolution: DEFAULT_MODEL.resolutions[1],
+  resolution: DEFAULT_MODEL.resolutions[0],
   aspectRatio: DEFAULT_MODEL.aspectRatios[0],
+  numVideos: 1,
   seed: null,
   style: "",
   camera: "",
@@ -48,6 +50,29 @@ export function GenerationForm({ isSubmitting, onSubmit, formRef }: GenerationFo
 
   const selectedModel = VIDEO_MODELS.find((model) => model.id === form.watch("model")) ?? DEFAULT_MODEL;
   const mode = form.watch("mode");
+  const duration = form.watch("duration");
+  const numVideos = form.watch("numVideos");
+  const estimatedCost = estimateVideoCostUsd({
+    pricing: selectedModel.pricing,
+    durationSeconds: duration,
+    numVideos,
+  });
+
+  useEffect(() => {
+    const currentMode = form.getValues("mode");
+    if (!selectedModel.modes.includes(currentMode)) {
+      form.setValue("mode", selectedModel.modes[0], { shouldValidate: true });
+    }
+    if (!selectedModel.durations.includes(form.getValues("duration"))) {
+      form.setValue("duration", selectedModel.durations[0], { shouldValidate: true });
+    }
+    if (!selectedModel.resolutions.includes(form.getValues("resolution"))) {
+      form.setValue("resolution", selectedModel.resolutions[0], { shouldValidate: true });
+    }
+    if (!selectedModel.aspectRatios.includes(form.getValues("aspectRatio"))) {
+      form.setValue("aspectRatio", selectedModel.aspectRatios[0], { shouldValidate: true });
+    }
+  }, [form, selectedModel]);
 
   return (
     <form className="grid gap-5" onSubmit={form.handleSubmit(onSubmit)}>
@@ -65,9 +90,9 @@ export function GenerationForm({ isSubmitting, onSubmit, formRef }: GenerationFo
                 <Label>Modo</Label>
                 <Tabs value={field.value} onValueChange={field.onChange}>
                   <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="text-to-video">Text to Video</TabsTrigger>
-                    <TabsTrigger value="image-to-video">Image to Video</TabsTrigger>
-                    <TabsTrigger value="reference-to-video">Reference to Video</TabsTrigger>
+                    <TabsTrigger value="text-to-video" disabled={!selectedModel.modes.includes("text-to-video")}>Text to Video</TabsTrigger>
+                    <TabsTrigger value="image-to-video" disabled={!selectedModel.modes.includes("image-to-video")}>Image to Video</TabsTrigger>
+                    <TabsTrigger value="reference-to-video" disabled={!selectedModel.modes.includes("reference-to-video")}>Reference to Video</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -116,6 +141,13 @@ export function GenerationForm({ isSubmitting, onSubmit, formRef }: GenerationFo
             )}
           />
           <AdvancedSettings control={form.control} />
+          <div className="rounded-md border border-white/10 bg-background/50 p-3 text-sm">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">Coste estimado</span>
+              <span className="font-semibold">{formatCost(estimatedCost)}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Coste estimado. El proveedor puede cambiar el precio real.</p>
+          </div>
         </CardContent>
       </Card>
 

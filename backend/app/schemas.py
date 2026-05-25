@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 class GenerationCreate(BaseModel):
     prompt: str = Field(min_length=1, max_length=8000)
     model: str = Field(default="Seedance 2.0", min_length=1, max_length=200)
+    provider: str | None = Field(default=None, max_length=50)
     duration: int | None = Field(default=None, ge=1, le=120)
     resolution: str | None = Field(default=None, max_length=50)
     aspect_ratio: str | None = Field(default=None, max_length=20)

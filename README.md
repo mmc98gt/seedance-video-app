@@ -44,6 +44,18 @@ No pongas API keys privadas en variables `VITE_`: todo lo que empieza por `VITE_
 
 ## Scripts
 
+Para arrancar toda la app desde la raíz del proyecto:
+
+```powershell
+python start_app.py
+```
+
+El script crea `backend/.venv` si falta, instala dependencias de backend y frontend cuando sea necesario, copia `.env.example` a `.env` si no existe, y arranca FastAPI + Vite. Para omitir instalación de dependencias:
+
+```powershell
+python start_app.py --skip-install
+```
+
 ```powershell
 cd frontend
 npm run dev

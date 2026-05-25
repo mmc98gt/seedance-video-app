@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     seedance_api_key: str = Field(default="", alias="SEEDANCE_API_KEY")
     seedance_api_base_url: str = Field(default="", alias="SEEDANCE_API_BASE_URL")
+    fal_api_key: str = Field(default="", alias="FAL_API_KEY")
+    fal_api_base_url: str = Field(default="https://queue.fal.run", alias="FAL_API_BASE_URL")
     output_dir: Path = Field(default=Path("outputs"), alias="OUTPUT_DIR")
     poll_interval_seconds: int = Field(default=5, alias="POLL_INTERVAL_SECONDS")
     poll_timeout_seconds: int = Field(default=600, alias="POLL_TIMEOUT_SECONDS")
@@ -21,6 +23,7 @@ class Settings(BaseSettings):
         alias="SEEDANCE_DOWNLOAD_PATH_TEMPLATE",
     )
     mock_seedance: bool = Field(default=False, alias="MOCK_SEEDANCE")
+    mock_video_provider: bool = Field(default=False, alias="MOCK_VIDEO_PROVIDER")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
