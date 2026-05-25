@@ -24,6 +24,7 @@ export interface LegacyGenerationStatus {
   created_at: string;
   prompt: string;
   model: string;
+  mode?: "text-to-video" | "image-to-video" | "reference-to-video";
   videos?: LegacyMediaFile[];
   error?: string | null;
   upstream_id?: string | null;
