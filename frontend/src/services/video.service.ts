@@ -24,7 +24,7 @@ function firstVideo(status: LegacyGenerationStatus) {
 
 function requestFromLegacy(status: LegacyGenerationStatus): GenerationRequest {
   return {
-    mode: "text-to-video",
+    mode: status.mode ?? "text-to-video",
     model: status.model || "seedance-pro",
     prompt: status.prompt || "",
     duration: 5,

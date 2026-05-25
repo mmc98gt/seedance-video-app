@@ -64,16 +64,17 @@ export function GenerationForm({ isSubmitting, onSubmit, formRef }: GenerationFo
               <div className="space-y-2">
                 <Label>Modo</Label>
                 <Tabs value={field.value} onValueChange={field.onChange}>
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="text-to-video">Text to Video</TabsTrigger>
                     <TabsTrigger value="image-to-video">Image to Video</TabsTrigger>
+                    <TabsTrigger value="reference-to-video">Reference to Video</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
             )}
           />
           <ModelSelector control={form.control} />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Controller
               control={form.control}
               name="duration"
@@ -125,7 +126,7 @@ export function GenerationForm({ isSubmitting, onSubmit, formRef }: GenerationFo
         </CardHeader>
         <CardContent className="space-y-5">
           <PromptComposer control={form.control} setValue={form.setValue} watch={form.watch} />
-          {mode === "image-to-video" && (
+          {(mode === "image-to-video" || mode === "reference-to-video") && (
             <Controller
               control={form.control}
               name="referenceImage"

@@ -1,4 +1,4 @@
-export type GenerationMode = "text-to-video" | "image-to-video";
+export type GenerationMode = "text-to-video" | "image-to-video" | "reference-to-video";
 
 export type GenerationStatus =
   | "idle"

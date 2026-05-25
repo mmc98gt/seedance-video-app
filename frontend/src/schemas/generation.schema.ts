@@ -3,7 +3,7 @@ import { ACCEPTED_IMAGE_TYPES, MAX_IMAGE_SIZE, formatBytes } from "@/lib/file";
 
 export const generationSchema = z
   .object({
-    mode: z.enum(["text-to-video", "image-to-video"], { required_error: "Selecciona un modo de generación." }),
+    mode: z.enum(["text-to-video", "image-to-video", "reference-to-video"], { required_error: "Selecciona un modo de generación." }),
     model: z.string().min(1, "Selecciona un modelo."),
     prompt: z.string().trim().min(12, "Describe el vídeo con al menos 12 caracteres.").max(4000, "El prompt no puede superar 4000 caracteres."),
     negativePrompt: z.string().max(1000, "El prompt negativo no puede superar 1000 caracteres.").optional(),
@@ -24,11 +24,11 @@ export const generationSchema = z
       .nullable(),
   })
   .superRefine((values, ctx) => {
-    if (values.mode === "image-to-video" && !values.referenceImage) {
+    if ((values.mode === "image-to-video" || values.mode === "reference-to-video") && !values.referenceImage) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["referenceImage"],
-        message: "Sube una imagen de referencia para Image to Video.",
+        message: "Sube una imagen de referencia para Image/Reference to Video.",
       });
     }
   });
